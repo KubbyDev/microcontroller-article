@@ -39,7 +39,7 @@ http://www.tooplate.com/view/2085-neuron
           <div class="row">
 
                <div class="col-md-12 col-sm-12">
-                    <h1>Deeply understanding the blink program</h1>
+                    <h1>Comprendre réelement le programme blink</h1>
                </div>
 
           </div>
@@ -52,33 +52,341 @@ http://www.tooplate.com/view/2085-neuron
                <div class="col-md-offset-1 col-md-10 col-sm-12">
                     <div class="blog-single-post-thumb">
 
-                         <div class="blog-post-title">
-                              <h2>Title</h2>
-                         </div>
 
-                         <div class="blog-post-des">
-                              <p>Vivamus euismod tempor interdum. Vivamus non scelerisque ex, et interdum leo. In bibendum lacus vitae felis egestas, at consectetur metus facilisis. Morbi tellus dolor, porta dignissim enim sit amet, dapibus sagittis erat. In blandit elit sit amet dui aliquet congue nec vel quam. Integer id tristique libero.</p>
-                              <p>Integer vestibulum vitae arcu vel consectetur. Morbi nisl enim, elementum eget enim nec, posuere commodo mi. Proin elementum metus et dolor posuere placerat. Proin in sagittis justo. Nulla tincidunt eu velit elementum accumsan.</p>
-                              
-                              <div class="blog-post-image">
-                              <img src="images/blog-image3.jpg" class="img-responsive" alt="Blog Image 3">
-                         </div>
-                              <h3>Paragraph title</h3>
-                              <p>Nulla tincidunt eu velit elementum accumsan. Vivamus euismod tempor interdum. Vivamus non scelerisque ex, et interdum leo. In bibendum lacus vitae felis egestas, at consectetur metus facilisis. Morbi tellus dolor, porta dignissim enim sit amet, dapibus sagittis erat. In blandit elit sit amet dui aliquet congue nec vel quam. Integer id tristique libero.</p>
-                         </div>
+                         <p>
+                              Un microcontroleur est un circuit intégré qui rassemble les elements essenciels d'un
+                              ordinateur (processeur, RAM, mémoire de stockage etc). Ils sont généralement utilisés
+                              dans des systemes embarqués et se caractérisent par une faible consommation et une
+                              vitesse d'horloge relativement faible par rapport aux microprocesseurs polyvalents
+                              que l'on trouve dans nos ordinateurs personnels.
+                         </p>
+                         <p>
+                              L'equivalent du célebre "Hello world!" sur un microcontroleur est le "Blink". Il
+                              consiste simplement a faire clignoter une led de facon periodique.
+                              Dans cet article, nous allons réaliser ce programme sur une Arduino UNO avec les
+                              outils fournis par Arduino, puis s'affranchir progressivement de ces outils pour
+                              comprendre le fonctionnement interne de notre programme et du microcontroleur
+                              utilisé par la carte.
+                              Cet article se veut synthétique, mais aborde beaucoup de choses. Le texte sera donc
+                              plutot court, mais de nombreuses sources et liens d'approfondissement sont
+                              disponibles a la fin.
+                         </p>
 
-                         <div class="blog-single-post-image">
-                              <div class="col-md-4 col-sm-4">
-                                   <img src="images/blog-image1.jpg" class="img-responsive" alt="Blog Image 1">
-                              </div>
-                              <div class="col-md-4 col-sm-4">
-                                   <img src="images/blog-image2.jpg" class="img-responsive" alt="Blog Image 2">
-                              </div>
-                              <div class="col-md-4 col-sm-4">
-                                   <img src="images/blog-image3.jpg" class="img-responsive" alt="Blog Image 3">
-                              </div>
-                         </div>
-                         <p>Aliquam blandit velit nisi, sed fringilla felis lacinia sed. Integer vitae porta felis. Class aptent taciti sociosqu ad litora torquent per conubia nostra, per inceptos himenaeos. Phasellus non tristique lacus. Suspendisse ut tortor vitae risus lacinia tristique. Aliquam sed consectetur libero.</p>
+
+                         <h3>La Arduino UNO</h3>
+
+
+                         <p>
+                              La Arduino UNO est une carte de développement à microcontroleur très populaire.
+                              Son architecture est simple et il existe un IDE gratuit pour l'utiliser facilement.
+                              De plus, il existe de nombreuses bibliotheques facilitant l'utilisation de la carte
+                              en elle meme et des différents périphériques qui peuvent y etre connectés, le tout
+                              open-source (meme certains schémas électrioniques sont disponibles).
+                         </p>
+                         <p>
+                              L'IDE Arduino est disponible gratuitement sur le site officiel d'Arduino. Il permet de
+                              developper des programmes et de les uploader sur la carte. L'IDE propose aussi plusieurs
+                              outils comme le moniteur série qui permet de communiquer avec nos programmes par un port
+                              série.
+                         </p>
+                         <p>
+                              Pour commencer, il nous faut un circuit electronique. Rien de bien compliqué, on place
+                              une led entre le pin 5V et un pin GND de la Arduino. On ajoute aussi une résistance de
+                              ~200 Ohm en serie avec la led pour limiter le courant a 20 mA (Cette valeur peut changer
+                              selon les leds). Si on alimente la Arduino (en USB par exemple), la led s'allume. Mais
+                              elle ne clignote pas ! Pour ça nous allons utiliser les GPIO de la carte (General Purpose
+                              Input Output). Ce sont des pins que le microcontroleur peut utiliser pour lire une tension
+                              ou l'écrire. On peut donc connecter la cathode de la led au pin 2 qui est un GPIO (comme
+                              les pins 0-13 et A0-5) et demander au microcontroleur de passer la tension a 0V ou a 5V
+                              pour allumer ou eteindre la led.
+                         </p>
+                         <p>
+                              Voici le programme que l'on va utiliser:
+                              (programme)
+                         </p>
+                         <p>
+                              Tous les programmes dans l'IDE Arduino ont deux fonctions spéciales: setup et loop. La
+                              fonction setup est appellée une fois au tout debut de l'execution, puis loop est appellée
+                              en boucle tant que la carte est sous tension.
+                              Dans la fonction setup il n'y a qu'un appel a pinMode qui sert a définir si un pin doit
+                              servir d'entrée ou de sortie. Dans notre cas c'est une sortie puisqu'on veut controler le
+                              potentiel au pin 2 (INPUT aurait permis de lire le potentiel au pin 2).
+                              Dans loop on a des appels a la fonction delay qui permet d'attendre un certain nombre de
+                              millisecondes, et digitalWrite qui permet de forcer un potentiel sur un pin donné (HIGH
+                              correspond a la tension d'alimentation du microcontroleur, soit 5V).
+                         </p>
+                         <p>
+                              Plus qu'a selectionner Arduino UNO dans Tools > Board et le bon port dans Tools > Port, puis
+                              cliquer sur Upload et notre led clignote !
+                              C'etait facile hein ? Mais en y réfléchissant un peu on ne sait pas grand chose de ce
+                              qu'on vient de faire. Tout ce que fait notre code c'est appeler des fonctions données
+                              alors qu'on peut tres bien faire sans !
+                         </p>
+
+
+                         <h3>Comment fonctionnent les librairies arduino ?</h3>
+
+
+                         <p>
+                              La Arduino UNO utilise le microcontroleur AtMega328p conçu par Atmel. Les composants
+                              electroniques ont toujours un manuel technique associé pour expliquer tout ce qu'il y a
+                              a savoir sur ce composant. Notre microcontroleur n'est pas une excpetion puisque Microchip
+                              a généreusement mis en ligne un manuel de 653 pages contenant tout ce dont on peut avoir
+                              besoin ! https://ww1.microchip.com/downloads/en/DeviceDoc/ATmega48A-PA-88A-PA-168A-PA-328-P-DS-DS40002061B.pdf
+                              Ca peut faire un peu peur au debut, mais c'est assez facile de trouver ce que l'on
+                              cherche dedans.
+                         </p>
+                         <p>
+                              On va commencer par essayer de se passer de la fonction pinMode. On s'en sert uniquement
+                              pour passer le pin 2 en mode output. En lisant la datasheet on remarque qu'il y a des
+                              registres DDRx (Data Direction Register x), x correspondant a un port. La AtMega328p
+                              compte 3 ports permettant l'acces a tous les GPIO. Le pin 2 est sur le port D (voir ci
+                              dessous), pin PD2. Il faut donc mettre le bit 2 du registre DDRD a 1 (pour le mode
+                              ecriture) et le tour est joué.
+                              Arduino fournit des macros pour acceder aux registres facilement, on peut donc remplacer
+                              l'appel a pinMode par DDRD |= 0b00000100
+                              Mais on peut se passer de ces macros, il suffit de rajouter cette ligne en haut de notre
+                              fichier
+                              \#define DDRD (*(volatile uint8_t*) 0x2A)
+                              0x2A est l'addresse du registre dans l'address space complet. Sur la datasheet il a
+                              ecrit 0x0A a coté, mais cette addresse correspond a l'address space des registres IO.
+                         </p>
+                         <p>
+                              Pour remplacer la fonction delay on pourrait utiliser une approche naive avec une boucle
+                              qui tourne pendant le temps qu'on veut. Cette solution fonctionne et n'est pas si abérante
+                              que ça pour un microcontroleur, mais il existe une autre approche beaucoup plus
+                              interessante: les timers. Les timers ne sont que des compteurs qui comptent les fronts
+                              montants d'une horloge. Le AtMega328p en a 3 et ils sont tres configurables. Un exemple
+                              d'utilisation classique est le compteur de microsecondes depuis la mise sous tension du
+                              microcontroleur. On utilise un timer pour compter le nombre de fronts montants de
+                              l'horloge principale a 16MHz et faire en sorte qu'il incrémente une variable a chaque
+                              fois qu'il compte 16 impulsions.
+                         </p>
+                         <p>
+                              Pour faire clignoter notre led, on va donc configurer un timer pour faire quelque chose
+                              chaque seconde. Pour ca, la premiere chose a faire est de set le prescaler et la source
+                              d'horloge. Dans notre cas, on veut utiliser l'horloge principale a 16MHz, et mettre un
+                              prescaler de 1024. Le prescaler sert a diviser la vitesse de l'horloge, ce qui veut dire
+                              que le timer comptera a 15.625 kHz au lieu de 16 MHz.
+                              Pour ça, on va set les 3 derniers bits du registre TCCR1B a 101. (le 1 correspond a
+                              Timer1, la Arduino UNO en a 3)
+                              Ensuite on va configurer le compare match output. Le but de ce systeme est de comparer
+                              contiuellement la valeur du timer avec une valeur définie par le programme, et de faire
+                              une action quand les valeurs sont égales. On peut configurer l'action pour qu'elle inverse
+                              la valeur du pin OC1A qui correspond au pin 9 (voir image) puis qu'elle reset le timer
+                              a 0. Pour ça il faut mettre TCCR1A a 01000000 (Toggle OC1A, mode CTC). La valeur a
+                              laquelle le compteur sera comparée va dans le registre OCR1A. On met 15625 comme ça on a
+                              bien un match chaque seconde puisque le timer est incrémenté a 15625 Hz.
+                              Les autres bits des registres peuvent etre mis a 0 mais je vous invite a lire la datasheet
+                              pour comprendre la fonction de chaque bit.
+                              Voici le programme implémentant tout ça (sauf pour pinMode, j'ai du changer ce qu'on a
+                              expliqué en haut pour utiliser le pin 9).
+                         </p>
+                         <p>
+                              (programme)
+                         </p>
+                         <p>
+                              Cette methode marche tres bien mais elle a l'inconvénient d'etre assez limitée en terme de
+                              possibilités d'actions a faire quand le timer atteint sa valeur max. Par exemple, on est
+                              obligé de mettre notre led sur le pin 9. On va donc voir une autre méthode beaucoup plus
+                              puissante (pour garder notre led sur le pin 2, non mais). Cette méthode utilise les
+                              interruptions. Une interruption est un mécanisme du microcontroleur qui permet de
+                              l'interrompre et d'executer une autre fonction puis le laisser revenir la ou il en etait.
+                              On peut configurer le timer pour qu'il execute une interruption on compare match. Pour
+                              cela, no va set le bit 1 a 1 dans TIMSK1 (Interrupt Mask Register).
+                              En faisant ça, des qu'il y aura un compare match, le flag OCF1A (dans le registre TIFR1)
+                              sera set, et une interruption sera déclenchée. Il ne reste plus qu'a définir notre
+                              interruption !
+                         </p>
+                         <p>
+                              Pour ça, généralement on utilise une macro nommée ISR (Interrupt Service Routine) avec le
+                              nom du vecteur d'interruption (TIMER1_COMPA_vect dans notre cas puisque c'est
+                              l'interruption qui est appellée quand on a un compare match sur le channel a du timer 1).
+                              http://ee-classes.usc.edu/ee459/library/documents/avr_intr_vectors/
+                              Dans notre interruption, on veut inverser l'etat de notre led sur le pin 2. Pour ça, on
+                              aurait pu utiliser digitalWrite mais c'est en fait plus facile et plus rapide en accedant
+                              directement aux registres (environ 40 fois plus rapide, regardez le code source de
+                              digitalWrite pour comprendre (lien + https://timodenk.com/blog/port-manipulation-and-arduino-digitalwrite-performance/)).
+                              Le pin 2 est le 3e du port D, on peut donc l'inverser en faisant PORTD ^= 0b00000100.
+                         </p>
+                         <p>
+                              On se retouve donc avec ça:
+                              (programme)
+                         </p>
+                         <p>
+                              La derniere chose venant des libs arduino est la macro ISR. C'est assez compliqué de
+                              comprendre comment l'enlever, on va le voir dans la prochaine partie.
+                         </p>
+
+
+                         <h3>Pas besoin d'IDE !</h3>
+
+
+                         <p>
+                              Ok, maintenant que l'on comprend comment fonctionne le microcontroleur et les libs arduino,
+                              on va se pencher sur la programmation. Que se passe t'il quand on clique sur upload ?
+                              Eh bien en fait on peut le voir ! Dans File > Preferences on peut activer "Show verbose
+                              output" pour la compilation et l'upload (je vous conseille de toujours cocher ces options).
+                              Maintenant, si on upload, on voit toutes les commandes que l'IDE arduino execute.
+                              On remarque notamment l'utilisation de 4 outils:
+                              - arduino-builder qui sert a préparer les fichiers source (passer d'un .ino a un .cpp en gros)
+                              - avr-g++ qui compile les fichiers sources en un fichier executable sur un processeur AVR
+                              (la famille d'architectures dont fait partie l'AtMega328p)
+                              - avr-objcopy qui traduit le fichier executable en un ficher hexadecimal au format intel
+                              - avrdude qui envoie le fichier hexadecimal a la carte.
+                              Ces utilitaires sont disponibles dans le dossier Arduino et Arduino\hardware\tools\avr\bin
+                         </p>
+                         <p>
+                              On va commencer par se débarrasser de cette macro ISR. Pour ça je dois avouer que je n'ai pas
+                              trouvé de resources sur internet, j'ai donc du experimenter moi meme. On va commencer par
+                              lancer une vérification du programme. On voit que l'ide compile pour verifier que tout se
+                              passe bien. L'appel a arduino-builder crée un fichier cpp qui est utilisé un peu plus bas
+                              dans l'appel a avr-g++. Pour moi c'est "G:\Tmp\arduino_build_735296\sketch\BlinkWithInterruptions.ino.cpp".
+                              On voit qu'il y a Arduino.h qui a été rajouté en haut, en plus de quelques lignes censé
+                              aider le compilateur a générer des messages d'erreurs si besoin. Maintenant qu'on a ce
+                              fichier cpp on va pouvoir appeller avr-g++ avec le flag -E pour n'executer que le
+                              preprocesseur (donc l'expension des macros). Le fichier fait 2000 lignes a cause
+                              d'Arduino.h, mais si on descend tout en bas on voit que la macro ISR a été expand en
+                              extern "C" void __vector_11 (void) __attribute__ ((signal,used, externally_visible)) ; void __vector_11 (void) {
+                              J'ai joué un peu avec cette ligne et je pense que __vector_11 est un mot réservé dans
+                              avr-objcopy, qui place automatiquement un pointeur vers cette fonction au bon endroit
+                              (quand cette interruption est déclenchée, le microcontroleur jump a l'addresse indiquée
+                              en 0x0016 d'apres la datasheet).
+                              Du coup on peut remplacer notre ISR par ça (ouf):
+                              extern "C" void __vector_11() __attribute__((signal,used,externally_visible)); void __vector_11()
+                         </p>
+                         <p>
+                              C'est presque suffisant pour compiler !
+                              Il nous reste juste une chose a faire: ajouter un main. Quand l'IDE arduino compile, il
+                              link avec un main.cpp existant (lien) qui contient un main avec les appels a setup et loop.
+                              Dans notre cas on a pas besoin de ça, un simple main avec le contenu de setup et une
+                              boucle infinie fera l'affaire. La boucle infinie est indispensable parce que si le
+                              microcontroleur sort de la fonction main, il va se mettre a executer des bytes dans sa
+                              mémoire qui peuvent avoir n'importe quelle valeur, mauvaise idée.
+                         </p>
+                         <p>
+                              Il nous reste un dernier truc a faire pour que ça marche. Il est possible de désactiver
+                              les interruptions grace a un bit dans le registre de status (un registre contenant des
+                              flags important comme Z (la derniere operation a donné 0), C (la derniere operation a
+                              une retenue) etc). Cette fonctionnalité permet de faire des operations tres sensibles
+                              en terme de timing, et etre sur qu'elles ne seront pas interrompues. Dans notre cas pas
+                              besoin de ça, mais elles sont désactivées par defaut donc il faut les activer (C'etait
+                              fait par la fonction init qui est appelée avant setup dans le main.cpp des libs Arduino).
+                         </p>
+                         <p>
+                              On se retouve donc avec ce code:
+                              (programme)
+                         </p>
+                         <p>
+                              Qu'on peut compiler avec cette commande:
+                              avr-g++ -DF_CPU=16000000 -mmcu=atmega328p -Os main.c -o main
+                              F_CPU correspond a la vitesse d'horloge de la cible (je ne sais pas pourquoi on doit la
+                              spécifier)
+                              mmcu correspond au microcontroleur cible, indispensable pour que le compilateur sache
+                              quelles instructions assembleur il peut utiliser.
+                              -Os est tres souvent utilisé sur les architectures avec peu de mémoire, il demande au
+                              compilateur d'essayer de réduire au maximum l'espace memoire necessaire pour le code.
+                         </p>
+                         <p>
+                              Notez que toutes les commandes sont disponibles dans un petit script python fontionnant
+                              un peu comme un makefile: (lien)
+                         </p>
+                         <p>
+                              Maintenant on peut créer le fichier hexadecimal avec cette commande:
+                              avr-objcopy -O ihex main main.hex
+                         </p>
+                         <p>
+                              Et plus qu'a upload !
+                              avrdude -D -v -carduino -patmega328p -PCOM6 -b115200 -Uflash:w:main.hex:i -CG:\Programmes\Arduino\hardware\tools\avr\etc\avrdude.conf
+                              Cette commande est assez complexe mais c'est assez simple de comprendre ce qu'elle fait
+                              en tappant avrdude --help
+                              Pour le port, vous pouvez l'avoir soit depuis l'IDE arduino, soit avec le gestionnaire de
+                              peripheriques dans la section "Ports (COM et LPT)". Sur linux (regarder pour linux)
+                         </p>
+                         <p>
+                              Et ca marche ! Ouf !
+                              Bon, la c'est bon, on maitrise tout notre programme, on ne peut pas faire mieux ! Hmm,
+                              pas si vite...
+                         </p>
+
+
+                         <h3>Pas besoin d'Arduino en fait !</h3>
+
+
+                         <p>
+                              J'ai dit au debut que la Arduino UNO est une carte de développement, ce qui veut dire
+                              qu'elle est censé faciliter le developpement d'un programme, mais pas etre utilisée en
+                              production. En fait, la majorité des composants ne sont pas indispensables mais sont
+                              utiles pour développer et debugger facilement.
+                              Quand on programme la Arduino, on programme le gros microcontroleur. C'est un AtMega328p
+                              conçu par Atmel. Et la vous etes censés me demander: Oui mais a quoi servent tous les
+                              autres composants alors ?
+                         </p>
+                         <p>
+                              On trouve des composants de gestion d'alimentation (qui servent a alimenter la carte avec
+                              une tension entre 7 et 12V), mais surtout un 2e microcontroleur a coté du port USB.
+                              Tiens ? Un deuxieme microcontroleur ? Pour quoi faire ? Et bien pour programmer le
+                              principal !
+                         </p>
+                         <p>
+                              Le microcontroleur principal contient un bootloader dans sa mémoire. Le bootloader est un
+                              petit programme executé des le démarage du microcontroleur. Son but est de verifier si
+                              le microcontroleur secondaire essaye d'initier une communication série, puis de passer
+                              l'execution au programme de l'utilisateur sinon. Si une communication est établie avec
+                              le microcontroleur secondaire, il va s'en servir pour remplacer le programme utilisateur.
+                              Cette méthode est tres pratique parce qu'elle permet de reprogrammer le microcontroleur
+                              tres facilement.
+                              Mais on a un probleme de poule et d'oeuf la ! Comment fait-on pour installer le bootloader
+                              quand il n'est pas encore dans la mémoire ?
+                              Eh bien on utilise une deuxieme méthode de programmation qui n'a pas besoin d'avoir un
+                              programme qui s'execute sur la cible pour fonctionner. On va se connecter en SPI (un
+                              protocole de communication tres populaire) et acceder directement a la mémoire. Notez
+                              qu'on peut aussi utiliser cette méthode pour programmer le microcontroleur, ce qui
+                              elimine le besoin d'un bootloader et fait gagner un peu d'espace (500 octets pour le
+                              bootloader arduino par defaut).
+                         </p>
+                         <p>
+                              Bon du coup on a juste besoin du microcontroleur sur une breadboard en fait c'est ça ?
+                              Pas si vite, mais oui. Deja il faut que le pin reset soit a 5V. Si on le laisse non
+                              connecté, il va prendre des potentiels "aléatoires" et le microcontroleur va se
+                              réinitialiser de facon aléatoire. Sur la arduino UNO il n'est pas connecté directement
+                              au 5V, mais il est pull-up (connecté a 5V par une grosse resistance), ce qui permet de
+                              reset le microcontroleur en connectant reset a GND (en appuyant sur le bouton) sans créer
+                              de court circuit.
+                              Il nous faut aussi un oscillateur 16MHz et deux condensateurs céramique ~18pF pour
+                              fournir une horloge au microcontroleur. Notez qu'on pourrait utiliser l'horloge interne
+                              8MHz en manipulant des registres spéciaux appelés fuses (high fuse et low fuse).
+                         </p>
+                         <p>
+                              Ok c'est bien joli tout ça mais en pratique comment on fait pour programmer le
+                              microcontroleur une fois sur la breadboard ?
+                              Alors deja on peut le programmer sur la Arduino avant de le mettre sur la breadboard,
+                              mais ça manque de piquant. Si le bootloader est deja présent, on peut utiliser une
+                              Arduino UNO qui n'a plus de microcontroleur principal, et connecter RX, TX et RESET pour
+                              faire comme si le microcontroleur n'avait pas été retiré.
+                              Si le bootloader n'est pas installé ou qu'on ne veut pas l'utiliser, il va nous falloir
+                              un programmer qui est un gadget capable de communiquer au PC en USB et au microcontroleur
+                              en SPI. Le fabriquant des microcontroleurs en fournissent souvent. Dans notre cas on peut
+                              utiliser le programmer fourni par Atmel, ou utiliser une Arduino UNO (entiere cette fois)
+                              pour fabriquer notre propre programmeur. Pour cela il suffit d'upload le programme
+                              ArduinoISP (Disponible dans les programmes d'exemple). Une fois que c'est fait, on
+                              connecte les lignes SPI en faisant attention a connecter le reset du MCU sur le CS de
+                              la Arduino. Ensuite on peut upload nos programmes avec l'IDE arduino en faisant
+                              Sketch > Upload using programmer (Attention il faut selectionner Arduino as ISP dans
+                              Tools > Programmer)
+                         </p>
+
+
+                         <h3>Conclusion</h3>
+
+
+                         <p>
+                              Voila, je pense que c'est suffisant pour dire qu'on sait comment fonctionne un blink :)
+                              Voici une longue liste de sources et liens d'approfondissement, je vous invite a y jeter
+                              un oeil si vous voulez mieux comprendre une notion abordée dans cet article
+                              Merci de votre attention !
+                         </p>
+
 
                          <div class="blog-author">
                               <div class="media">
