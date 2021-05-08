@@ -1,7 +1,7 @@
-#define DDRB   (*(volatile uint8_t*)  0x24)
-#define TCCR1A (*(volatile uint8_t*)  0x80)
-#define TCCR1B (*(volatile uint8_t*)  0x81)
-#define OCR1A  (*(volatile uint16_t*) 0x88)
+#define DDRB   (*(volatile unsigned char*)  0x24)
+#define TCCR1A (*(volatile unsigned char*)  0x80)
+#define TCCR1B (*(volatile unsigned char*)  0x81)
+#define OCR1A  (*(volatile unsigned short*) 0x88)
 
 void setup() {
   TCCR1A = 0;

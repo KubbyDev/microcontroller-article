@@ -1,9 +1,9 @@
-#define DDRD   (*(volatile uint8_t*)  0x2A)
-#define PORTD  (*(volatile uint8_t*)  0x2B)
-#define TCCR1A (*(volatile uint8_t*)  0x80)
-#define TCCR1B (*(volatile uint8_t*)  0x81)
-#define TIMSK1 (*(volatile uint8_t*)  0x6F)
-#define OCR1A  (*(volatile uint16_t*) 0x88)
+#define DDRD   (*(volatile unsigned char*)  0x2A)
+#define PORTD  (*(volatile unsigned char*)  0x2B)
+#define TCCR1A (*(volatile unsigned char*)  0x80)
+#define TCCR1B (*(volatile unsigned char*)  0x81)
+#define TIMSK1 (*(volatile unsigned char*)  0x6F)
+#define OCR1A  (*(volatile unsigned short*) 0x88)
 
 void setup() {
   TCCR1A = 0;
