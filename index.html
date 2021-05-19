@@ -73,7 +73,7 @@ http://www.tooplate.com/view/2085-neuron
                          </p>
 
 
-                         <h3>La Arduino UNO</h3>
+                         <h3 id="arduino">La Arduino UNO</h3>
 
 
                          <p>
@@ -91,7 +91,7 @@ http://www.tooplate.com/view/2085-neuron
                          <p>
                              Pour commencer, il nous faut un circuit électronique. Rien de bien compliqué, on place
                              une LED entre le pin 5V et un pin GND de la Arduino. On ajoute aussi une résistance de
-                             ~200 Ohm en série avec la LED pour limiter le courant à moins de 20 mA (Cette valeur peut changer
+                             ~200 Ohm en série avec la LED pour limiter le courant à 20 mA (Cette valeur peut changer
                              selon les LEDs). Si on alimente la Arduino (en USB par exemple), la LED s'allume. Mais
                              elle ne clignote pas ! Pour ça nous allons utiliser les GPIO de la carte (General Purpose
                              Input Output). Ce sont des pins que le microcontrôleur peut utiliser pour lire une tension
@@ -133,13 +133,15 @@ void loop() {
                          <p>
                              Plus qu'à sélectionner Arduino UNO dans Tools > Board et le bon port dans Tools > Port, puis
                              cliquer sur Upload et notre LED clignote !
+                         </p>
+                         <p>
                              C'était facile hein ? Mais en y réfléchissant un peu on ne sait pas grand chose de ce
                              qu'on vient de faire. Tout ce que fait notre code c'est appeler des fonctions données
                              alors qu'on peut très bien faire sans !
                          </p>
 
 
-                         <h3>Comment fonctionnent les librairies arduino ?</h3>
+                         <h3 id="libraries">Comment fonctionnent les librairies arduino ?</h3>
 
 
                          <p>
@@ -153,6 +155,9 @@ void loop() {
                              Ça peut faire un peu peur au début, mais c'est assez facile de trouver ce que l'on
                              cherche dedans.
                          </p>
+
+
+                        <br/><h5 id="pinmode">PinMode</h5>
                          <p>
                              On va commencer par essayer de se passer de la fonction pinMode. On s'en sert uniquement
                              pour passer le pin 2 en mode output. En lisant la datasheet on remarque qu'il y a des
@@ -174,6 +179,9 @@ void loop() {
                         <div class="blog-post-image">
                             <img src="images/pinout.png" class="img-responsive" alt="pinout">
                         </div>
+
+
+                        <br/><h5 id="timers">Les Timers</h5>
                         <p>
                             Pour remplacer la fonction delay on pourrait utiliser une approche naïve avec une boucle
                             qui tourne pendant le temps qu'on veut. Cette solution fonctionne et n'est pas si aberrante
@@ -185,6 +193,9 @@ void loop() {
                             de l'horloge principale (16MHz) et faire en sorte qu'il incrémente une variable à chaque
                             fois qu'il compte 16 impulsions.
                         </p>
+
+
+                        <br/><h5 id="prescaler">Le Prescaler</h5>
                         <p>
                             Pour faire clignoter notre LED, on va donc configurer un timer pour faire quelque chose
                             chaque seconde. Pour ça, la première chose à faire est de set le prescaler et la source
@@ -192,12 +203,18 @@ void loop() {
                             prescaler de 1024. Le prescaler sert à diviser la vitesse de l'horloge, ce qui veut dire
                             que le timer comptera à 15.625 kHz au lieu de 16 MHz.
                             Pour ça, on va set les 3 derniers bits du registre TCCR1B à 101 comme expliqué dans la
-                            datasheet.<br/>
-                            Ensuite on va configurer le compare match output. Le but de ce système est de comparer
+                            datasheet.
+                        </p>
+
+
+                        <br/><h5 id="comparematch">Le "Output Compare Match"</h5>
+                        <p>
+                            Ensuite on va configurer le output compare match. Le but de ce système est de comparer
                             continuellement la valeur du timer avec une valeur définie par le programme, et de faire
                             une action quand les valeurs sont égales. On peut configurer l'action pour qu'elle inverse
                             la valeur du pin OC1A qui correspond au pin 9 (voir le pinout un peu plus haut) puis
-                            qu'elle reset le timer à 0. Pour ça il faut mettre TCCR1A à 01000000
+                            qu'elle reset le timer à 0 (le reset s'appelle CTC ou Clear Timer on Compare).
+                            Pour ça il faut mettre TCCR1A à 01000000
                             et mettre 1 sur le bit 3 de TCCR1B. La valeur à
                             laquelle le compteur sera comparée va dans le registre OCR1A. On met 15625 comme ça on a
                             bien un match chaque seconde puisque le timer est incrémenté à 15625 Hz.
@@ -222,6 +239,9 @@ void setup() {
 }
 
 void loop() {}           </code></pre>
+
+
+                        <br/><h5 id="interruptions">Les Interruptions</h5>
                         <p>
                             Cette méthode marche très bien mais elle a l'inconvénient d'être assez limitée en terme de
                             possibilités d'actions à faire quand le timer atteint sa valeur max. Par exemple, on est
@@ -280,7 +300,7 @@ void loop() {}           </code></pre>
                         </p>
 
 
-                        <h3>Pas besoin d'IDE !</h3>
+                        <h3 id="no-ide">Pas besoin d'IDE !</h3>
 
 
                         <p>
@@ -298,6 +318,9 @@ void loop() {}           </code></pre>
                             - avrdude qui envoie le fichier hexadécimal à la carte.<br/>
                             Ces utilitaires sont disponibles dans le dossier d'installation de l'IDE Arduino, dans Arduino\hardware\tools\avr\bin
                         </p>
+
+
+                        <br/><h5 id="isr">La macro ISR</h5>
                         <p>
                             On va commencer par se débarrasser de cette macro ISR. Pour ça je dois avouer que je n'ai pas
                             trouvé de ressources sur internet, j'ai donc du expérimenter moi même. On va commencer par
@@ -318,6 +341,9 @@ void loop() {}           </code></pre>
                             Du coup on peut remplacer notre ISR par ça:<br/>
                             <code>extern "C" void __vector_11() __attribute__((signal,used,externally_visible)); void __vector_11()</code>
                         </p>
+
+
+                        <br/><h5 id="main">Un main !</h5>
                         <p>
                             C'est presque suffisant pour compiler !
                             Il nous reste juste une chose à faire: ajouter un main.<br/>
@@ -329,6 +355,9 @@ void loop() {}           </code></pre>
                             microcontrôleur sort de la fonction main, il va se mettre à exécuter des octets dans sa
                             mémoire qui peuvent avoir n'importe quelle valeur, mauvaise idée.
                         </p>
+
+
+                        <br/><h5 id="sreg">Le registre de status</h5>
                         <p>
                             Il nous reste une dernière chose à faire pour que ça marche. Il est possible de désactiver
                             les interruptions grâce à un bit dans le registre d’état (un registre contenant des
@@ -401,7 +430,7 @@ void __vector_11() {
                         </p>
 
 
-                        <h3>Pas besoin d'Arduino en fait !</h3>
+                        <h3 id="no-arduino">Pas besoin d'Arduino en fait !</h3>
 
 
                         <p>
@@ -421,6 +450,9 @@ void __vector_11() {
                         <div class="blog-post-image">
                             <img src="images/parts.jpg" class="img-responsive" alt="Parts">
                         </div>
+
+
+                        <br/><h5 id="bootloader">Le Bootloader</h5>
                         <p>
                             Le microcontrôleur principal contient un bootloader dans sa mémoire. Le bootloader est un
                             petit programme exécuté des le démarrage du microcontrôleur. Son but est de vérifier si
@@ -441,6 +473,9 @@ void __vector_11() {
                         <div class="blog-post-image">
                             <img src="images/programming.png" class="img-responsive" alt="Parts">
                         </div>
+
+
+                        <br/><h5 id="breadboard">Setup de la breadboard  # TODO: trouver un nom</h5>
                         <p>
                             Bon du coup on a juste besoin du microcontrôleur sur une breadboard en fait c'est ça ?
                             Pas si vite, mais oui. Déjà il faut que le pin reset soit à 5V. Si on le laisse non
@@ -453,6 +488,9 @@ void __vector_11() {
                             fournir une horloge au microcontrôleur. Notez qu'on pourrait utiliser l'horloge interne
                             8MHz en configurant des registres spéciaux appelés fuses (high fuse et low fuse).
                         </p>
+
+
+                        <br/><h5 id="programmation">Programmation</h5>
                         <p>
                             Ok c'est bien joli tout ça mais en pratique comment on fait pour programmer le
                             microcontrôleur une fois sur la breadboard ?
@@ -478,7 +516,7 @@ void __vector_11() {
                         </p>
 
 
-                        <h3>Conclusion</h3>
+                        <h3 id="conclusion">Conclusion</h3>
 
 
                         <p>
@@ -489,12 +527,14 @@ void __vector_11() {
                         <br/>
 
 
-                        <h5>Sources et liens d'approfondissement</h5>
+                        <h5 id="sources">Sources et liens d'approfondissement</h5>
 
 
                         <p>
                             Blink basique:
                             <br/><b><a target="_blank" href="https://www.arduino.cc/en/pmwiki.php?n=Tutorial/Blink">Tutoriel officiel</a></b>
+                            <br/>Timers:
+                            <br/><b><a target="_blank" href="https://urish.medium.com/5-ways-to-blink-an-led-with-arduino-8f8a41b4fc7d">Excellent article</a></b>
                             <br/>Interruptions:
                             <br/><b><a target="_blank" href="https://www.youtube.com/watch?v=DlEa8kd7n3Q">Excellente vidéo de Ben Eater</a></b>
                             <br/><b><a target="_blank" href="https://www.youtube.com/watch?v=Uv9UeYUsA8A">Explication pratique des interruptions avec les Timers</a></b>
