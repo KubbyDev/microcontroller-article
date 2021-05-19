@@ -88,11 +88,16 @@ http://www.tooplate.com/view/2085-neuron
                              L'IDE propose aussi plusieurs outils comme le moniteur série qui permet de communiquer
                              avec nos programmes par un port série.
                          </p>
+
+
+                        <br/><h5 id="electronics">Le circuit électronique</h5>
                          <p>
                              Pour commencer, il nous faut un circuit électronique. Rien de bien compliqué, on place
                              une LED entre le pin 5V et un pin GND de la Arduino. On ajoute aussi une résistance de
-                             ~200 Ohm en série avec la LED pour limiter le courant à 20 mA (Cette valeur peut changer
-                             selon les LEDs). Si on alimente la Arduino (en USB par exemple), la LED s'allume. Mais
+                             ~200 Ohm en série avec la LED pour limiter le courant à 15 mA. Attention à prendre en compte
+                             la tension aux bornes de la LED pour calculer la résistance. Il existe des
+                             <b><a target="_blank" href="https://ohmslawcalculator.com/led-resistor-calculator">calculateurs</a></b>
+                             en ligne pour ça.<br/> Si on alimente la Arduino (en USB par exemple), la LED s'allume. Mais
                              elle ne clignote pas ! Pour ça nous allons utiliser les GPIO de la carte (General Purpose
                              Input Output). Ce sont des pins que le microcontrôleur peut utiliser pour lire une tension
                              ou l'écrire. On peut donc connecter la cathode de la LED au pin 2 qui est un GPIO (comme
@@ -102,6 +107,9 @@ http://www.tooplate.com/view/2085-neuron
                         <div class="blog-post-image">
                             <img src="images/wiring.png" class="img-responsive" alt="Schematics">
                         </div>
+
+
+                        <br/><h5 id="program">Le programme</h5>
                          <p>
                               Voici le programme que l'on va utiliser:
                          </p>
@@ -136,7 +144,7 @@ void loop() {
                          </p>
                          <p>
                              C'était facile hein ? Mais en y réfléchissant un peu on ne sait pas grand chose de ce
-                             qu'on vient de faire. Tout ce que fait notre code c'est appeler des fonctions données
+                             qu'on vient de faire. Tout ce que fait notre code c'est appeler des fonctions pré-faites
                              alors qu'on peut très bien faire sans !
                          </p>
 
@@ -146,13 +154,13 @@ void loop() {
 
                          <p>
                              La Arduino UNO utilise le microcontrôleur AtMega328p conçu par Atmel. Les composants
-                             électroniques ont toujours un manuel technique associé pour expliquer tout ce qu'il y a
-                             à savoir sur le composant. Notre microcontrôleur n'est pas une exception puisque Microchip
-                             a généreusement mis en ligne un
+                             électroniques ont toujours un manuel technique (datasheet en anglais) associé pour expliquer
+                             tout ce qu'il y a à savoir sur le composant. Notre microcontrôleur n'est pas une exception
+                             puisque Microchip a généreusement mis en ligne un
                              <b><a target="_blank" href="https://ww1.microchip.com/downloads/en/DeviceDoc/ATmega48A-PA-88A-PA-168A-PA-328-P-DS-DS40002061B.pdf">manuel</a></b>
                              de 653 pages contenant tout ce dont on peut avoir
                              besoin !
-                             Ça peut faire un peu peur au début, mais c'est assez facile de trouver ce que l'on
+                             C'est un peu impressionnant au début, mais c'est assez facile de trouver ce que l'on
                              cherche dedans.
                          </p>
 
@@ -160,20 +168,22 @@ void loop() {
                         <br/><h5 id="pinmode">PinMode</h5>
                          <p>
                              On va commencer par essayer de se passer de la fonction pinMode. On s'en sert uniquement
-                             pour passer le pin 2 en mode output. En lisant la datasheet on remarque qu'il y a des
+                             pour passer le pin 2 en mode sortie. En lisant le manuel on remarque qu'il y a des
                              registres DDRx (Data Direction Register x), x correspondant à un port. La AtMega328p
                              compte 3 ports permettant l'accès à tous les GPIO. Le pin 2 est sur le port D (voir image
                              ci-dessous), pin PD2. Il faut donc mettre le bit 2 du registre DDRD à 1 (pour le mode écriture) et le tour est joué.
                              Arduino fournit des macros pour accéder aux registres facilement, on peut donc remplacer
-                             l'appel à pinMode par <code>DDRD |= 0b00000100</code><br/>
-                             Mais on peut se passer de ces macros, il suffit de rajouter cette ligne en haut de notre
+                             l'appel à pinMode par <code>DDRD |= 0b00000100</code>
+                         </p>
+                        <p>
+                             On peut se passer de ces macros, il suffit de rajouter cette ligne en haut de notre
                              fichier:<br/>
                              <code>#define DDRD (*(volatile unsigned char*) 0x2A)</code><br/>
-                             0x2A est l'adresse du registre dans l'address space complet. Sur la datasheet il a
-                             écrit 0x0A à coté, mais cette adresse correspond à l'address space des registres IO.
+                             0x2A est l'adresse du registre dans l'espace d'adressage complet. Sur le manuel il a
+                             écrit 0x0A à coté, mais cette adresse correspond à l'espace d'adressage des registres IO.
                              Le mot clé volatile empêche le compilateur d'optimiser en enlevant notre code. On écrit
                              à cette adresse mais on ne se ressert jamais de ce qu'on a écrit (le registre est
-                             directement connecté au hardware qu'il contrôle) donc le compilateur pense qu'elle
+                             directement connecté au matériel qu'il contrôle) donc le compilateur pense qu'elle
                              ne sert à rien.
                          </p>
                         <div class="blog-post-image">
@@ -198,27 +208,26 @@ void loop() {
                         <br/><h5 id="prescaler">Le Prescaler</h5>
                         <p>
                             Pour faire clignoter notre LED, on va donc configurer un timer pour faire quelque chose
-                            chaque seconde. Pour ça, la première chose à faire est de set le prescaler et la source
+                            chaque seconde. Pour ça, la première chose à faire est de configurer le prescaler et la source
                             d'horloge. Dans notre cas, on veut utiliser l'horloge principale de 16MHz, et mettre un
                             prescaler de 1024. Le prescaler sert à diviser la vitesse de l'horloge, ce qui veut dire
                             que le timer comptera à 15.625 kHz au lieu de 16 MHz.
-                            Pour ça, on va set les 3 derniers bits du registre TCCR1B à 101 comme expliqué dans la
-                            datasheet.
+                            Pour ça, on va mettre les 3 derniers bits du registre TCCR1B à 101 comme expliqué dans le manuel.
                         </p>
 
 
-                        <br/><h5 id="comparematch">Le "Output Compare Match"</h5>
+                        <br/><h5 id="comparematch">Le "Output Compare"</h5>
                         <p>
-                            Ensuite on va configurer le output compare match. Le but de ce système est de comparer
+                            Ensuite on va configurer le "Output Compare". Le but de ce système est de comparer
                             continuellement la valeur du timer avec une valeur définie par le programme, et de faire
                             une action quand les valeurs sont égales. On peut configurer l'action pour qu'elle inverse
-                            la valeur du pin OC1A qui correspond au pin 9 (voir le pinout un peu plus haut) puis
-                            qu'elle reset le timer à 0 (le reset s'appelle CTC ou Clear Timer on Compare).
+                            la valeur du pin OC1A qui correspond au pin 9 (voir le schéma un peu plus haut) puis
+                            qu'elle remette le timer à 0 (le reset s'appelle CTC ou Clear Timer on Compare match).
                             Pour ça il faut mettre TCCR1A à 01000000
                             et mettre 1 sur le bit 3 de TCCR1B. La valeur à
                             laquelle le compteur sera comparée va dans le registre OCR1A. On met 15625 comme ça on a
                             bien un match chaque seconde puisque le timer est incrémenté à 15625 Hz.
-                            Les autres bits des registres peuvent être mis à 0 mais je vous invite à lire la datasheet
+                            Les autres bits des registres peuvent être mis à 0 mais je vous invite à lire le manuel
                             pour comprendre la fonction de chaque bit.
                             Voici le programme implémentant tout ça (sauf pour pinMode, j'ai du changer ce qu'on a
                             expliqué en haut pour utiliser le pin 9).
@@ -246,13 +255,13 @@ void loop() {}           </code></pre>
                             Cette méthode marche très bien mais elle a l'inconvénient d'être assez limitée en terme de
                             possibilités d'actions à faire quand le timer atteint sa valeur max. Par exemple, on est
                             obligé de mettre notre LED sur le pin 9. On va donc voir une autre méthode beaucoup plus
-                            puissante (pour garder notre LED sur le pin 2, non mais). Cette méthode utilise les
+                            puissante (on va pouvoir remettre notre LED sur le pin 2 !). Cette méthode utilise les
                             interruptions. Une interruption est un mécanisme du microcontrôleur qui permet de
                             l'interrompre et d'exécuter une autre fonction puis le laisser revenir la où il en était.
                             On peut configurer le timer pour qu'il déclenche une interruption quand il y a un compare
                             match. Pour cela, on va set le bit 1 à 1 dans TIMSK1 (Interrupt Mask Register).
                             En faisant ça, dès qu'il y aura un compare match, le flag OCF1A (dans le registre TIFR1)
-                            sera set, et une interruption sera déclenchée. Il ne reste plus qu'à définir ce que doit
+                            sera activé, et une interruption sera déclenchée. Il ne reste plus qu'à définir ce que doit
                             faire l'interruption !
                         </p>
                         <p>
@@ -269,7 +278,7 @@ void loop() {}           </code></pre>
                             Le pin 2 est le 3e du port D, on peut donc l'inverser en faisant <code>PORTD ^= 0b00000100</code>.
                         </p>
                         <p>
-                            On se retrouve donc avec ça:
+                            Et voici le code mis à jour:
                         </p>
                         <pre><code class="ino">#define DDRD   (*(volatile unsigned char*)  0x2A)
 #define PORTD  (*(volatile unsigned char*)  0x2B)
@@ -337,13 +346,13 @@ void loop() {}           </code></pre>
                             J'ai joué un peu avec cette ligne et je pense que __vector_11 est un mot réservé dans
                             avr-objcopy, qui place automatiquement un pointeur vers cette fonction au bon endroit
                             (quand l'interruption compare match est déclenchée, le microcontrôleur jump à l'adresse indiquée
-                            en 0x0016 d'après la datasheet).
+                            en 0x0016 d'après le manuel).
                             Du coup on peut remplacer notre ISR par ça:<br/>
                             <code>extern "C" void __vector_11() __attribute__((signal,used,externally_visible)); void __vector_11()</code>
                         </p>
 
 
-                        <br/><h5 id="main">Un main !</h5>
+                        <br/><h5 id="main">La fonction main</h5>
                         <p>
                             C'est presque suffisant pour compiler !
                             Il nous reste juste une chose à faire: ajouter un main.<br/>
@@ -367,6 +376,9 @@ void loop() {}           </code></pre>
                             besoin de ça, mais elles sont désactivées par défaut donc il faut les activer (C'était
                             fait par la fonction init qui est appelée avant setup dans le main.cpp des libs Arduino).
                         </p>
+
+
+                        <br/><h5 id="upload">Compilation et programmation</h5>
                         <p>
                             On se retrouve donc avec ce code:
                         </p>
