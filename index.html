@@ -313,7 +313,7 @@ void loop() {}           </code></pre>
 
 
                         <p>
-                            Ok, maintenant que l'on comprend comment fonctionne le microcontrôleur et les libs Arduino,
+                            Maintenant que l'on comprend comment fonctionne le microcontrôleur et les libs Arduino,
                             on va se pencher sur la programmation. Que se passe-t-il quand on clique sur upload ?
                             Eh bien en fait on peut le voir !<br/>
                             Dans File > Preferences on peut activer "Show verbose
@@ -321,7 +321,7 @@ void loop() {}           </code></pre>
                             Maintenant, si on upload, on voit toutes les commandes que l'IDE Arduino exécute.
                             On remarque notamment l'utilisation de 4 outils:<br/>
                             - arduino-builder qui sert à préparer les fichiers source (passer d'un .ino à un .cpp)<br/>
-                            - avr-g++ qui compile les fichiers sources en un fichier exécutable sur un processeur AVR
+                            - avr-g++ qui compile les fichiers source en un fichier exécutable sur un processeur AVR
                             (la famille d'architectures dont fait partie l'AtMega328p)<br/>
                             - avr-objcopy qui traduit le fichier exécutable en un ficher hexadécimal au format Intel<br/>
                             - avrdude qui envoie le fichier hexadécimal à la carte.<br/>
@@ -348,18 +348,24 @@ void loop() {}           </code></pre>
                             (quand l'interruption compare match est déclenchée, le microcontrôleur jump à l'adresse indiquée
                             en 0x0016 d'après le manuel).
                             Du coup on peut remplacer notre ISR par ça:<br/>
-                            <code>extern "C" void __vector_11() __attribute__((signal,used,externally_visible)); void __vector_11()</code>
+                            <code>extern "C" void __vector_11() __attribute__((signal,used)); void __vector_11()</code>
+                            <br/>Les mots extern "C" indiquent au compilateur qu'il ne faut pas modifier le nom de la fonction
+                            (par défaut les compilateurs c++ ajoutent des informations dans les noms de fonctions, c'est du
+                            <b><a target="_blank" href="https://stackoverflow.com/questions/1314743/what-is-name-mangling-and-how-does-it-work">name mangling</a></b>).
+                            __attribute__ permet de donner des informations supplémentaires au compilateur sur la fonction.
+                            Ici on a signal qui demande au compilateur de générer le code d'entrée et de sortie de handler
+                            d'interruption (sauvegarde des registres sur la pile par exemple) et used qui force le compilateur
+                            à inclure cette fonction dans le résultat même s'il pense qu'elle n'est pas utilisée,
                         </p>
 
 
                         <br/><h5 id="main">La fonction main</h5>
                         <p>
-                            C'est presque suffisant pour compiler !
-                            Il nous reste juste une chose à faire: ajouter un main.<br/>
+                            C'est presque suffisant pour compiler ! Déjà il nous faudrait un main.<br/>
                             Quand l'IDE Arduino compile, il link avec un
                             <b><a target="_blank" href="https://github.com/arduino/ArduinoCore-avr/blob/master/cores/arduino/main.cpp">main.cpp</a></b>
                             existant qui contient un main avec les appels à setup et loop.
-                            Dans notre cas on a pas besoin de ça, un simple main avec le contenu de setup et une
+                            Dans notre cas un simple main avec le contenu de setup et une
                             boucle infinie fera l'affaire. La boucle infinie est indispensable parce que si le
                             microcontrôleur sort de la fonction main, il va se mettre à exécuter des octets dans sa
                             mémoire qui peuvent avoir n'importe quelle valeur, mauvaise idée.
@@ -380,7 +386,7 @@ void loop() {}           </code></pre>
 
                         <br/><h5 id="upload">Compilation et programmation</h5>
                         <p>
-                            On se retrouve donc avec ce code:
+                            Et voici le code final !
                         </p>
                         <pre><code class="cpp">#define DDRD   (*(volatile unsigned char*)  0x2A)
 #define PORTD  (*(volatile unsigned char*)  0x2B)
@@ -403,15 +409,14 @@ int main() {
 }
 
 // This function will be called when the interruption is triggered
-extern "C" void __vector_11() __attribute__((signal,used,externally_visible));
+extern "C" void __vector_11() __attribute__((signal,used));
 void __vector_11() {
   PORTD ^= 0b00000100;  // Toggles PD2 (pin 2)
 }                        </code></pre>
                         <p>
                             Qu'on peut compiler avec cette commande:<br/>
                             <code>avr-g++ -DF_CPU=16000000 -mmcu=atmega328p -Os main.c -o main</code><br/>
-                            F_CPU correspond  la vitesse d'horloge de la cible (je ne sais pas pourquoi on doit la
-                            spécifier)<br/>
+                            F_CPU correspond à la vitesse d'horloge de la cible<br/>
                             mmcu correspond au microcontrôleur cible, indispensable pour que le compilateur sache
                             quelles instructions assembleur il peut utiliser.<br/>
                             -Os est très souvent utilisé sur les architectures avec peu de mémoire, il demande au
@@ -437,7 +442,7 @@ void __vector_11() {
                         </p>
                         <p>
                             Et la LED clignote ! Ouf !<br/>
-                            Bon, la c'est bon, on maitrise tout notre programme, on ne peut pas faire mieux ! Hmm,
+                            Cette fois c'est bon, on maîtrise tout ce qu'il se passe sur la carte pour faire clignoter la LED ! Hmm,
                             pas si vite...
                         </p>
 
@@ -450,8 +455,8 @@ void __vector_11() {
                             qu'elle est censé faciliter le développement d'un programme, mais pas être utilisée en
                             production. En fait, la majorité des composants ne sont pas indispensables mais sont
                             utiles pour développer et debugger facilement.
-                            Quand on programme la Arduino, on programme le gros microcontrôleur. Et la vous êtes
-                            censés me demander: Oui mais à quoi servent tous les autres composants alors ?
+                            Quand on programme la Arduino, on programme le gros microcontrôleur.
+                            Mais à quoi servent tous les autres composants alors ?
                         </p>
                         <p>
                             On trouve des composants de gestion d'alimentation (qui servent à alimenter la carte avec
@@ -467,7 +472,7 @@ void __vector_11() {
                         <br/><h5 id="bootloader">Le Bootloader</h5>
                         <p>
                             Le microcontrôleur principal contient un bootloader dans sa mémoire. Le bootloader est un
-                            petit programme exécuté des le démarrage du microcontrôleur. Son but est de vérifier si
+                            petit programme exécuté dès le démarrage du microcontrôleur. Son but est de vérifier si
                             le microcontrôleur secondaire essaye d'initier une communication série, et de passer
                             l'exécution au programme de l'utilisateur sinon. Si une communication est établie avec
                             le microcontrôleur secondaire, il va s'en servir pour remplacer le programme utilisateur.
@@ -482,12 +487,9 @@ void __vector_11() {
                             élimine le besoin d'un bootloader et fait gagner un peu d'espace (500 octets pour le
                             bootloader Arduino par défaut).
                         </p>
-                        <div class="blog-post-image">
-                            <img src="images/programming.png" class="img-responsive" alt="Parts">
-                        </div>
 
 
-                        <br/><h5 id="breadboard">Setup de la breadboard  # TODO: trouver un nom</h5>
+                        <br/><h5 id="breadboard">La Breadboard</h5>
                         <p>
                             Bon du coup on a juste besoin du microcontrôleur sur une breadboard en fait c'est ça ?
                             Pas si vite, mais oui. Déjà il faut que le pin reset soit à 5V. Si on le laisse non
@@ -500,23 +502,36 @@ void __vector_11() {
                             fournir une horloge au microcontrôleur. Notez qu'on pourrait utiliser l'horloge interne
                             8MHz en configurant des registres spéciaux appelés fuses (high fuse et low fuse).
                         </p>
+                        <div class="blog-post-image">
+                            <img src="https://www.arduino.cc/wiki/static/453e877cafb3ee6f02579cb37e1a111c/4d4a2/ArduinoUSBSerial.png" class="img-responsive" alt="Breadboard">
+                        </div>
 
 
                         <br/><h5 id="programmation">Programmation</h5>
                         <p>
                             Ok c'est bien joli tout ça mais en pratique comment on fait pour programmer le
                             microcontrôleur une fois sur la breadboard ?
-                            Alors déjà on peut le programmer sur la Arduino avant de le mettre sur la breadboard,
-                            mais ça manque de piquant. Si le bootloader est déjà présent, on peut utiliser une
-                            Arduino UNO qui n'a plus de microcontrôleur principal, et connecter RX, TX et RESET pour
-                            faire comme si le microcontrôleur n'avait pas été retiré.
+                            Alors déjà on peut le programmer sur la Arduino avant de le mettre sur la breadboard
+                            (le programme est enregistré dans le microcontrôleur et y reste même quand l'alimentation est coupée),
+                            mais ça manque de piquant.
+                        </p>
+                        <p>
+                            Si le bootloader est déjà présent, on peut utiliser une
+                            Arduino UNO qui n'a plus de microcontrôleur principal, et connecter RX, TX et RESET sur la Arduino
+                            à RX, TX et RESET sur le microcontrôleur. Le microcontrôleur secondaire utilise une communication
+                            série pour envoyer le programme de l'utilisateur au bootloader, ce qui nécessite RX et TX, et
+                            le redémarre quand la programmation est terminée (d'où le RESET). Cette méthode revient à
+                            avoir le microcontrôleur sur la Arduino en fait, mais peut etre appliqué à un AtMega soudé sur
+                            une carte électronique par exemple.
+                        </p>
+                        <p>
                             Si le bootloader n'est pas installé ou qu'on ne veut pas l'utiliser, il va nous falloir
                             un programmeur qui est un gadget capable de communiquer avec le PC en USB et avec le microcontrôleur
                             en SPI. Dans notre cas on peut
-                            utiliser le programmeur fourni par Atmel, ou utiliser une Arduino UNO (entière cette fois)
+                            utiliser un programmeur conçu par Atmel, ou utiliser une Arduino UNO (entière cette fois)
                             pour fabriquer notre propre programmeur. Pour cela il suffit d'upload le programme
                             ArduinoISP (Disponible dans les programmes d'exemple). Une fois que c'est fait, on
-                            connecte les lignes SPI en faisant attention à connecter le reset du microcontrôleur sur le
+                            connecte les lignes SPI en faisant attention à connecter le RESET du microcontrôleur sur le
                             chip select (pin 10 selon la configuration par défaut de ArduinoISP) de
                             la Arduino. Ensuite on peut upload nos programmes avec l'IDE Arduino en faisant
                             Sketch > Upload using programmer ou installer un bootloader avec Tools > Burn Bootloader
@@ -526,6 +541,9 @@ void __vector_11() {
                             Pour faire la même chose sans l'IDE Arduino les commandes sont à peu près les mêmes, il
                             suffit de regarder les commandes éxecutées par l'IDE Arduino pour savoir quoi faire.
                         </p>
+                        <div class="blog-post-image">
+                            <img src="images/programming.png" class="img-responsive" alt="Parts">
+                        </div>
 
 
                         <h3 id="conclusion">Conclusion</h3>
@@ -550,6 +568,8 @@ void __vector_11() {
                             <br/>Interruptions:
                             <br/><b><a target="_blank" href="https://www.youtube.com/watch?v=DlEa8kd7n3Q">Excellente vidéo de Ben Eater</a></b>
                             <br/><b><a target="_blank" href="https://www.youtube.com/watch?v=Uv9UeYUsA8A">Explication pratique des interruptions avec les Timers</a></b>
+                            <br/>Attributs de fonction:
+                            <br/><b><a target="_blank" href="https://gcc.gnu.org/onlinedocs/gcc-4.7.2/gcc/Function-Attributes.html">gcc.gnu.org</a></b>
                             <br/>Arduino sur une Breadboard:
                             <br/><b><a target="_blank" href="https://www.arduino.cc/en/Main/Standalone">Tutoriel officiel</a></b>
                             <br/><b><a target="_blank" href="https://www.arduino.cc/en/uploads/Main/Arduino_Uno_Rev3-schematic.pdf">Schema électronique de la Arduino UNO</a></b>
@@ -557,6 +577,9 @@ void __vector_11() {
                             <br/><b><a target="_blank" href="https://www.arduino.cc/en/Tutorial/BuiltInExamples/ArduinoToBreadboard">Tutoriel officiel</a></b>
                             <br/>Fuses:
                             <br/><b><a target="_blank" href="https://www.youtube.com/watch?v=Q2DakPocvfs">Vidéo de Mitch Davis (la série entière est très intéressante)</a></b>
+                            <br/>Protocoles de communication:
+                            <br/><b><a target="_blank" href="https://fr.wikipedia.org/wiki/Serial_Peripheral_Interface">SPI (Serial Peripheral Interface)</a></b>
+                            <br/><b><a target="_blank" href="https://www.circuitbasics.com/basics-uart-communication/">Série</a></b>
                         </p>
 
 

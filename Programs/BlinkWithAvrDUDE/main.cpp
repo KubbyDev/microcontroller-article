@@ -19,6 +19,7 @@ int main() {
 }
 
 // This function will be called when the interruption is triggered
-extern "C" void __vector_11() __attribute__((signal,used,externally_visible)); void __vector_11() {
+extern "C" void __vector_11() __attribute__((signal,used));
+void __vector_11() {
   PORTD ^= 0b00000100;  // Toggles PD2 (pin 2)
 }
