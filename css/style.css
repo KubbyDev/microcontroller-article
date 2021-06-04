@@ -782,3 +782,20 @@ footer .footer-copyright {
 
 }
 
+.language-icon {
+  display: inline-block;
+  height: 50px;
+  padding: 0;
+  margin-top: 5%;
+  margin-left: 90%;
+  vertical-align: top;
+  width: 50px;
+  background-color: transparent;
+  border: none;
+}
+#close-image img {
+  display: block;
+  height: 50px;
+  width: 50px;
+  padding: 0;
+}
